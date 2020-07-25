@@ -53,7 +53,6 @@ import org.apache.http.ParseException;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.util.EntityUtils;
 import org.imgscalr.Scalr;
 import org.json.JSONArray;
@@ -92,7 +91,7 @@ public class NSWFAPI extends javax.swing.JFrame {
 
         editButton.setEnabled(output_folder.isDirectory() && output_folder.list().length>0);
         setAIstate(0);
-        ImageIcon img = new ImageIcon(getClass().getResource("/puryfi/puryfi.png"));
+        ImageIcon img = new ImageIcon(getClass().getResource("/puryfi.png"));
         setIconImage(img.getImage());
         mgen_e_button.addActionListener(actionListener);
         mgen_c_button.addActionListener(actionListener);
@@ -341,23 +340,23 @@ public class NSWFAPI extends javax.swing.JFrame {
             case 0:
                 aistate = 0;
                 statusLabel.setText("Turning on AI");
-                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/puryfi/load_red.gif")));
+                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/load_red.gif")));
                 break;
             case 1:  
                 aistate = 1;
                 statusLabel.setText("AI feels kinky now");
-                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/puryfi/alive.gif")));   
+                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/alive.gif")));
                 startButton.setEnabled(true);
                 break;
             case 2: 
                 aistate = 2;
                 statusLabel.setText("AI is looking at nudes");
-                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/puryfi/load_green.gif"))); 
+                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/load_green.gif")));
                 break;
              case 3: 
                  aistate = 3;
                 statusLabel.setText("AI got tired, we are restarting");
-                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/puryfi/load_red.gif"))); 
+                statusLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/load_red.gif")));
                 break;
 
         }
@@ -997,7 +996,7 @@ public class NSWFAPI extends javax.swing.JFrame {
         statusLabel.setText("Loading AI");
         statusLabel.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
 
-        jLabel12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/puryfi/rsz_become_a_patron_button.png"))); // NOI18N
+        jLabel12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rsz_become_a_patron_button.png"))); // NOI18N
         jLabel12.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         jLabel12.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -2267,7 +2266,7 @@ public class NSWFAPI extends javax.swing.JFrame {
                             String line = null;
                             boolean started = false;
                             while ((line = br.readLine()) != null) {
-                                if(line.contains("Running")){
+                                if(line.contains("Serving Flask app")){
                                     if (nswfapi != null) {
                                         nswfapi.setAIstate(1);
                                         started = true;
