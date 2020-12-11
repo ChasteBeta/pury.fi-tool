@@ -1348,6 +1348,7 @@ public class NSFWAPI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
+        NSFWAPI.del_buf = null;
         if (!converter.isEmpty()) {
             for (int i = 0; i < converter.size(); i++) {
                 if (editmode && !converter.get(i).isEdited()) {
