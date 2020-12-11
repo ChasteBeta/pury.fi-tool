@@ -269,7 +269,7 @@ public class NSFW_BoundingBox {
 
     public boolean isCensored() {
        
-        if (type == Type.FACE_FEMALE && NSWFAPI.ff_CheckBox.isSelected() || type == Type.FACE_MALE && NSWFAPI.fm_CheckBox.isSelected()){
+        if (type == Type.FACE_FEMALE && NSFWAPI.ff_CheckBox.isSelected() || type == Type.FACE_MALE && NSFWAPI.fm_CheckBox.isSelected()){
             return censor;
         }
         if(type == Type.FACE_FEMALE || type == Type.FACE_MALE){
@@ -287,58 +287,58 @@ public class NSFW_BoundingBox {
         if(this.type == null){
             return true;
         }
-        if(this.type.equals(BELLY_EXPOSED) && !NSWFAPI.belly_e_button.isSelected()){
+        if(this.type.equals(BELLY_EXPOSED) && !NSFWAPI.belly_e_button.isSelected()){
             return false;
         }
-        if(this.type.equals(BELLY_COVERED) && !NSWFAPI.belly_c_button.isSelected()){
+        if(this.type.equals(BELLY_COVERED) && !NSFWAPI.belly_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(BUTTOCKS_EXPOSED) && !NSWFAPI.buttocks_e_button.isSelected()){
+        if(this.type.equals(BUTTOCKS_EXPOSED) && !NSFWAPI.buttocks_e_button.isSelected()){
             return false;
         }
-        if(this.type.equals(BUTTOCKS_COVERED) && !NSWFAPI.buttocks_c_button.isSelected()){
+        if(this.type.equals(BUTTOCKS_COVERED) && !NSFWAPI.buttocks_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(FEMALE_BREAST_EXPOSED) && !NSWFAPI.fbreats_e_button.isSelected()){
+        if(this.type.equals(FEMALE_BREAST_EXPOSED) && !NSFWAPI.fbreats_e_button.isSelected()){
             return false;
         }
-        if(this.type.equals(FEMALE_BREAST_COVERED) && !NSWFAPI.fbreats_c_button.isSelected()){
+        if(this.type.equals(FEMALE_BREAST_COVERED) && !NSFWAPI.fbreats_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(FEMALE_GENITALIA_EXPOSED) && !NSWFAPI.fgen_e_button.isSelected()){
+        if(this.type.equals(FEMALE_GENITALIA_EXPOSED) && !NSFWAPI.fgen_e_button.isSelected()){
             return false;
         }
-        if(this.type.equals(FEMALE_GENITALIA_COVERED) && !NSWFAPI.fgen_c_button.isSelected()){
+        if(this.type.equals(FEMALE_GENITALIA_COVERED) && !NSFWAPI.fgen_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(MALE_GENITALIA_COVERED) && !NSWFAPI.mgen_c_button.isSelected()){
+        if(this.type.equals(MALE_GENITALIA_COVERED) && !NSFWAPI.mgen_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(MALE_GENITALIA_EXPOSED) && !NSWFAPI.mgen_e_button.isSelected()){
+        if(this.type.equals(MALE_GENITALIA_EXPOSED) && !NSFWAPI.mgen_e_button.isSelected()){
             return false;
         }
-        if(this.type.equals(MALE_BREAST_EXPOSED) && !NSWFAPI.mbreast_e_button.isSelected()){
+        if(this.type.equals(MALE_BREAST_EXPOSED) && !NSFWAPI.mbreast_e_button.isSelected()){
             return false;
         }
-        if(this.type.equals(MALE_BREAST_COVERED) && !NSWFAPI.mbreast_c_button.isSelected()){
+        if(this.type.equals(MALE_BREAST_COVERED) && !NSFWAPI.mbreast_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(FEET_COVERED) && !NSWFAPI.feet_c_button.isSelected()){
+        if(this.type.equals(FEET_COVERED) && !NSFWAPI.feet_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(FEET_EXPOSED) && !NSWFAPI.feet_e_button.isSelected()){
+        if(this.type.equals(FEET_EXPOSED) && !NSFWAPI.feet_e_button.isSelected()){
             return false;
         }
-        if(this.type.equals(ARMPITS_COVERED) && !NSWFAPI.armpits_c_button.isSelected()){
+        if(this.type.equals(ARMPITS_COVERED) && !NSFWAPI.armpits_c_button.isSelected()){
             return false;
         }
-        if(this.type.equals(ARMPITS_EXPOSED) && !NSWFAPI.armpits_e_button.isSelected()){
+        if(this.type.equals(ARMPITS_EXPOSED) && !NSFWAPI.armpits_e_button.isSelected()){
             return false;
         }
-        if (this.type.equals(ANUS_COVERED) && !NSWFAPI.anus_c_button.isSelected()) {
+        if (this.type.equals(ANUS_COVERED) && !NSFWAPI.anus_c_button.isSelected()) {
             return false;
         }
-        if (this.type.equals(ANUS_EXPOSED) && !NSWFAPI.anus_e_button.isSelected()) {
+        if (this.type.equals(ANUS_EXPOSED) && !NSFWAPI.anus_e_button.isSelected()) {
             return false;
         }
         return true;
@@ -347,7 +347,7 @@ public class NSFW_BoundingBox {
     DecimalFormat f = new DecimalFormat("#0.00");
     
     public String getHeadline() {
-        if(NSWFAPI.labelmodeComboBox.getSelectedIndex() == 1){
+        if(NSFWAPI.labelmodeComboBox.getSelectedIndex() == 1){
             String[] splited = getName().split("\\s+");
             String r = "";
             for (int i = 0; i < splited.length; i++) {
@@ -361,7 +361,7 @@ public class NSFW_BoundingBox {
             Double confidence1 = getConfidence();
             return r + f.format(confidence1);
         }
-         if(NSWFAPI.labelmodeComboBox.getSelectedIndex() == 2){
+         if(NSFWAPI.labelmodeComboBox.getSelectedIndex() == 2){
             return "";
         }
         return getName() + " " + getConfidence();

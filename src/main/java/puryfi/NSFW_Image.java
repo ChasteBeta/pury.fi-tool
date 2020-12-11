@@ -21,8 +21,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -36,13 +34,13 @@ import javax.swing.JLabel;
 
 import org.json.JSONObject;
 
-import static puryfi.NSWFAPI.*;
+import static puryfi.NSFWAPI.*;
 
 /**
  *
  * @author 0131
  */
-public class NSWF_Image {
+public class NSFW_Image {
     
     
     List<NSFW_BoundingBox> results = new ArrayList<>();
@@ -57,7 +55,7 @@ public class NSWF_Image {
     File editedsourcefileimage = null;
     File editedsourcefiletxt = null;
 
-    public NSWF_Image(File image, Double nsfw_score,JSONObject json) {
+    public NSFW_Image(File image, Double nsfw_score, JSONObject json) {
         this.image = image;
         this.nsfw_score = nsfw_score;
         this.json = json;
@@ -149,7 +147,7 @@ public class NSWF_Image {
             img = ImageIO.read(image);         
             return img;
         } catch (IOException ex) {
-            Logger.getLogger(NSWF_Image.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NSFW_Image.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
@@ -162,7 +160,7 @@ public class NSWF_Image {
             img = ImageIO.read(image);         
             return copyImage(img);
         } catch (IOException ex) {
-            Logger.getLogger(NSWF_Image.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NSFW_Image.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
@@ -171,7 +169,7 @@ public class NSWF_Image {
     public BufferedImage getCensoredImage(){
         BufferedImage paintedImage = getBufferedImageCopy();
         Graphics g = paintedImage.getGraphics();
-        if(NSWFAPI.del_buf != null){
+        if(NSFWAPI.del_buf != null){
             Rectangle highlight = del_buf.bounding_box;
             paintedImage = paintedImage.getSubimage(highlight.x, highlight.y, highlight.width, highlight.height);
         } else {
@@ -180,11 +178,11 @@ public class NSWF_Image {
                 Rectangle bounding_box = results.get(i).getBounding_box();
                 if (results.get(i).getSticker() != null) {
                     paintSticker(g, results.get(i).getSticker(), bounding_box);
-                } else if (NSWFAPI.pixelButton.isSelected()) {
+                } else if (NSFWAPI.pixelButton.isSelected()) {
                     if (results.get(i).isCensored()) {
                         pixelate(paintedImage, bounding_box);
                     }
-                } else if (NSWFAPI.barButton.isSelected()) {
+                } else if (NSFWAPI.barButton.isSelected()) {
                     if (results.get(i).isCensored()) {
                         g.setColor(Color.BLACK);
                         g.fillRect(bounding_box.x, bounding_box.y, bounding_box.width, bounding_box.height);
@@ -195,9 +193,9 @@ public class NSWF_Image {
                     }
                 }
             }
-            if (NSWFAPI.blurButton.isSelected()) {
+            if (NSFWAPI.blurButton.isSelected()) {
                 blurbuff = copyImage(paintedImage);
-                fastblur(blurbuff, Math.min(500, (int) NSWFAPI.jSpinner1.getValue()));
+                fastblur(blurbuff, Math.min(500, (int) NSFWAPI.jSpinner1.getValue()));
                 blur(paintedImage, blurboxes);
             }
         }
@@ -216,7 +214,7 @@ public class NSWF_Image {
             }         
             return cache_resized;
         } catch (IOException ex) {
-            Logger.getLogger(NSWF_Image.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NSFW_Image.class.getName()).log(Level.SEVERE, null, ex);
         }
         return cache_resized;
     }
@@ -258,7 +256,7 @@ public class NSWF_Image {
     
     public BufferedImage getResizedPaintedImage(JLabel viewport) {
         BufferedImage org = getBufferedImage();
-        BufferedImage org_r = NSWFAPI.rsize(org, viewport);
+        BufferedImage org_r = NSFWAPI.rsize(org, viewport);
         double scalex = (double) viewport.getWidth() / org.getWidth();
         double scaley = (double) viewport.getHeight() / org.getHeight();
         double scale = Math.min(scalex, scaley);
@@ -268,7 +266,7 @@ public class NSWF_Image {
         for (int i = 0; i < results.size(); i++) {
             if(results.get(i).checkOptions()){
                 Rectangle bounding_box = results.get(i).getBounding_box();
-                if((results.get(i).equals(NSWFAPI.del_buf))){
+                if((results.get(i).equals(NSFWAPI.del_buf))){
                     g.setColor(Color.PINK);
                 }else{
                     g.setColor(getColor(results.get(i).getConfidence()));
@@ -338,10 +336,10 @@ public class NSWF_Image {
             File dir = new File(output_folder+"/censored");
             if(!dir.exists())dir.mkdir();
             BufferedImage censoredImage = getCensoredImage();
-            File outputfile = new File(NSWFAPI.output_folder+"/censored/"+alias+".png");
+            File outputfile = new File(NSFWAPI.output_folder+"/censored/"+alias+".png");
             ImageIO.write(censoredImage, "png", outputfile);
         } catch (IOException ex) {
-            Logger.getLogger(NSWF_Image.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NSFW_Image.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -351,10 +349,10 @@ public class NSWF_Image {
             File dir = new File(output_folder+"/identified");
             if(!dir.exists())dir.mkdir();
             BufferedImage censoredImage = getPaintedImage();
-            File outputfile = new File(NSWFAPI.output_folder+"/identified/"+alias+".png");
+            File outputfile = new File(NSFWAPI.output_folder+"/identified/"+alias+".png");
             ImageIO.write(censoredImage, "png", outputfile);
         } catch (IOException ex) {
-            Logger.getLogger(NSWF_Image.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NSFW_Image.class.getName()).log(Level.SEVERE, null, ex);
         }
 
          try {
@@ -363,17 +361,17 @@ public class NSWF_Image {
                 dir.mkdir();
             }
             BufferedImage censoredImage = getBufferedImage();
-            File outputfile = new File(NSWFAPI.output_folder + "/source/" + alias + ".png");
+            File outputfile = new File(NSFWAPI.output_folder + "/source/" + alias + ".png");
             ImageIO.write(censoredImage, "png", outputfile);
         } catch (IOException ex) {
-            Logger.getLogger(NSWF_Image.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NSFW_Image.class.getName()).log(Level.SEVERE, null, ex);
         }
         try {
             File dir = new File(output_folder + "/source");
             if (!dir.exists()) {
                 dir.mkdir();
             }
-            PrintWriter writer = new PrintWriter(NSWFAPI.output_folder + "/source/" + alias+".txt", "UTF-8");
+            PrintWriter writer = new PrintWriter(NSFWAPI.output_folder + "/source/" + alias+".txt", "UTF-8");
             for (int i = 0; i < results.size(); i++) {
                 NSFW_BoundingBox get = results.get(i);
                 //if(get.isCensored() || (get.getType().equals(NSFW_BoundingBox.Type.FACE_MALE) || get.getType().equals(NSFW_BoundingBox.Type.FACE_FEMALE))){
@@ -392,7 +390,7 @@ public class NSWF_Image {
             }
             writer.close();
         } catch (IOException ex) {
-            Logger.getLogger(NSWF_Image.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(NSFW_Image.class.getName()).log(Level.SEVERE, null, ex);
         }
         if(json != null){
         File jdir = new File(output_folder+"/json");
@@ -400,13 +398,13 @@ public class NSWF_Image {
         try (FileWriter file = new FileWriter(output_folder+ "/json/" + alias+".json")) {  
              file.write(json.toString());
          } catch (IOException ex) {
-             Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+             Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
          }
         }
     }
     public void pixelate(BufferedImage inputImage, Rectangle boundingbox) {
 
-        int PIX_SIZE = (int) NSWFAPI.jSpinner1.getValue();
+        int PIX_SIZE = (int) NSFWAPI.jSpinner1.getValue();
 
         // Define the part that needs to be pixaleted within the boundaries of the inputImage.
         int startY = setCoordinateWithinBounds(boundingbox.y, inputImage.getHeight());
@@ -539,7 +537,7 @@ public class NSWF_Image {
             RadialGradientPaint rgp = new RadialGradientPaint(
                     new Point2D.Double(box.x+box.width/2, box.y+box.height/2),
                     box.width/2+box.height/2,
-                    new float[]{0.0f, (Float)NSWFAPI.jSpinner2.getValue(), 1f},
+                    new float[]{0.0f, (Float) NSFWAPI.jSpinner2.getValue(), 1f},
                     new Color[]{transparent, transparent, fill});
             g2d.setPaint(rgp);
             AffineTransform tr2 = new AffineTransform();

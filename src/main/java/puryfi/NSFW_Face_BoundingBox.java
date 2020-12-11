@@ -48,7 +48,7 @@ public class NSFW_Face_BoundingBox extends NSFW_BoundingBox{
     
     
     public String getHeadline() {
-        if(NSWFAPI.labelmodeComboBox.getSelectedIndex() == 1){
+        if(NSFWAPI.labelmodeComboBox.getSelectedIndex() == 1){
             String[] splited = getName().split("\\s+");
             String r = "";
             for (int i = 0; i < splited.length; i++) {
@@ -62,7 +62,7 @@ public class NSFW_Face_BoundingBox extends NSFW_BoundingBox{
             Double confidence1 = getConfidence();
             return r + f.format(confidence1);
         }
-         if(NSWFAPI.labelmodeComboBox.getSelectedIndex() == 2){
+         if(NSFWAPI.labelmodeComboBox.getSelectedIndex() == 2){
             return "";
         }
         return getName() + "\nAge: "+ age + " Race: "+ ethnicity.toLowerCase();

@@ -32,14 +32,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -51,9 +49,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
 import org.apache.http.client.fluent.Request;
-import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.util.EntityUtils;
@@ -64,13 +60,13 @@ import org.json.JSONObject;
 /**
  * @author 0131
  */
-public class NSWFAPI extends javax.swing.JFrame {
+public class NSFWAPI extends javax.swing.JFrame {
 
     File[] input;
     public static File output_folder = new File("output");
     public static File temp = new File("output/temp");
 
-    List<NSWF_Image> converter = new ArrayList<>();
+    List<NSFW_Image> converter = new ArrayList<>();
 
     int displayed_index = 0;
 
@@ -79,7 +75,7 @@ public class NSWFAPI extends javax.swing.JFrame {
     /**
      * Creates new form NewJFrame
      */
-    public NSWFAPI() {
+    public NSFWAPI() {
 
         ActionListener actionListener = new ActionListener() {
             @Override
@@ -120,12 +116,12 @@ public class NSWFAPI extends javax.swing.JFrame {
 
             @Override
             public boolean dispatchKeyEvent(KeyEvent ke) {
-                synchronized (NSWFAPI.class) {
+                synchronized (NSFWAPI.class) {
                     switch (ke.getID()) {
                         case KeyEvent.KEY_PRESSED:
                             if (ke.getKeyCode() == KeyEvent.VK_DELETE) {
                                 if (del_buf != null) {
-                                    NSWF_Image get = converter.get(displayed_index);
+                                    NSFW_Image get = converter.get(displayed_index);
                                     boolean remove = get.getResults().remove(del_buf);
                                     display(displayed_index);
                                     del_buf = null;
@@ -158,13 +154,13 @@ public class NSWFAPI extends javax.swing.JFrame {
     }
 
 
-    public NSWF_Image parser(File file, String json) {
+    public NSFW_Image parser(File file, String json) {
         JSONObject obj = new JSONObject(json);
         obj.put("file", file.getAbsolutePath());
 
         Double score = obj.getJSONObject("output").getDouble("nsfw_score");
         JSONArray arr = obj.getJSONObject("output").getJSONArray("detections");
-        NSWF_Image result = new NSWF_Image(file, score, obj);
+        NSFW_Image result = new NSFW_Image(file, score, obj);
         for (int i = 0; i < arr.length(); i++) {
             String name = arr.getJSONObject(i).getString("name");
             Double confidence = arr.getJSONObject(i).getDouble("confidence");
@@ -178,7 +174,7 @@ public class NSWFAPI extends javax.swing.JFrame {
         return result;
     }
 
-    public void parseFace(NSWF_Image container, String json) {
+    public void parseFace(NSFW_Image container, String json) {
         try {
             JSONObject obj = new JSONObject(json);
             container.getJson().put("face", json);
@@ -194,14 +190,14 @@ public class NSWFAPI extends javax.swing.JFrame {
                 int[] nums = new int[]{face_rect_x, face_rect_y, face_rect_w + face_rect_x, face_rect_h + face_rect_y};
                 container.getResults().add(new NSFW_Face_BoundingBox("Face - " + gender, 1.0, gender, ethnicity, age, nums));
             }
-        } catch (org.json.JSONException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             System.err.println(json);
         }
     }
 
 
-    public NSWF_Image convert(File file) {
+    public NSFW_Image convert(File file) {
         try {
             boolean tmp = false;
             File outputFile = file;
@@ -223,7 +219,7 @@ public class NSWFAPI extends javax.swing.JFrame {
                 }
             }
             if (noaiRadioButton.isSelected()) {
-                return new NSWF_Image(file, 1.0, null);
+                return new NSFW_Image(file, 1.0, null);
             }
             String url = "http://localhost:8000/";
             if (puryRadioButton.isSelected()) {
@@ -247,18 +243,18 @@ public class NSWFAPI extends javax.swing.JFrame {
             Instant finish = Instant.now();
             double timeElapsed = Duration.between(start, finish).toMillis() / 1000.0;  //in millis
             try {
-                NSWF_Image parser = parser(file, EntityUtils.toString(returnResponse.getEntity()));
+                NSFW_Image parser = parser(file, EntityUtils.toString(returnResponse.getEntity()));
 
 
                 if (tmp) outputFile.delete();
                 return parser;
-            } catch (org.json.JSONException e) {
+            } catch (Exception e) {
                 System.out.println(EntityUtils.toString(returnResponse.getEntity()));
                 e.printStackTrace();
                 return null;
             }
-        } catch (IOException | ParseException ex) {
-            Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
@@ -271,7 +267,7 @@ public class NSWFAPI extends javax.swing.JFrame {
             displayed_index = i;
             jLabel9.setText("Preview: " + (displayed_index + 1) + " / " + converter.size());
 
-            NSWF_Image get = converter.get(i);
+            NSFW_Image get = converter.get(i);
             scoreLabel.setText("<html>NSFW Score: <b>" + get.getNsfw_score());
             BufferedImage cens = get.getCensoredImage();
             BufferedImage org_rsize = get.getResizedPaintedImage(originialimagelabel);
@@ -1296,7 +1292,7 @@ public class NSWFAPI extends javax.swing.JFrame {
                     for (int i = 0; i < input.length; i++) {
                         File name = input[i];
                         timstamp = System.currentTimeMillis();
-                        NSWF_Image convert = convert(name);
+                        NSFW_Image convert = convert(name);
                         if (convert != null) {
                             converter.add(convert);
                             if (converter.size() == 1) {
@@ -1312,7 +1308,7 @@ public class NSWFAPI extends javax.swing.JFrame {
                                     System.err.println("Waiting for Ai to turn on.");
                                     Thread.sleep(1000);
                                 } catch (InterruptedException ex) {
-                                    Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                                    Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
                                 }
                             }
                             if (restarting && i < input.length) {
@@ -1339,14 +1335,14 @@ public class NSWFAPI extends javax.swing.JFrame {
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
         if (displayed_index > 0) {
-            NSWFAPI.del_buf = null;
+            NSFWAPI.del_buf = null;
             display(displayed_index - 1);
         }
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         if (displayed_index < converter.size() - 1) {
-            NSWFAPI.del_buf = null;
+            NSFWAPI.del_buf = null;
             display(displayed_index + 1);
         }
     }//GEN-LAST:event_jButton4ActionPerformed
@@ -1429,7 +1425,7 @@ public class NSWFAPI extends javax.swing.JFrame {
                 }
             }
             if (!converter.isEmpty() && evt.getClickCount() == 2) {
-                NSWF_Image get = converter.get(displayed_index);
+                NSFW_Image get = converter.get(displayed_index);
                 List<NSFW_BoundingBox> results = get.getResults();
                 int x = evt.getX();
                 int y = evt.getY();
@@ -1518,14 +1514,14 @@ public class NSWFAPI extends javax.swing.JFrame {
 
     private void ignoreCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ignoreCheckBoxActionPerformed
         if (!converter.isEmpty()) {
-            NSWF_Image get = converter.get(displayed_index);
+            NSFW_Image get = converter.get(displayed_index);
             get.setIgnore(ignoreCheckBox.isSelected());
         }
     }//GEN-LAST:event_ignoreCheckBoxActionPerformed
 
     private void originialimagelabelMouseMoved(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_originialimagelabelMouseMoved
         if (!converter.isEmpty()) {
-            NSWF_Image get = converter.get(displayed_index);
+            NSFW_Image get = converter.get(displayed_index);
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
@@ -1573,7 +1569,7 @@ public class NSWFAPI extends javax.swing.JFrame {
 
     public boolean doPopup(Component component, MouseEvent evt) {
         if (!converter.isEmpty()) {
-            NSWF_Image get = converter.get(displayed_index);
+            NSFW_Image get = converter.get(displayed_index);
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
@@ -1674,7 +1670,7 @@ public class NSWFAPI extends javax.swing.JFrame {
         mouse_m_x = evt.getX();
         mouse_m_y = evt.getY();
         if (pressed != null) {
-            NSWF_Image get = converter.get(displayed_index);
+            NSFW_Image get = converter.get(displayed_index);
             BufferedImage bufferedImage = get.getBufferedImage();
             double scalex = (double) originialimagelabel.getWidth() / bufferedImage.getWidth();
             double scaley = (double) originialimagelabel.getHeight() / bufferedImage.getHeight();
@@ -1706,7 +1702,7 @@ public class NSWFAPI extends javax.swing.JFrame {
 
     private void originialimagelabelMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_originialimagelabelMousePressed
         if (!converter.isEmpty()) {
-            NSWF_Image get = converter.get(displayed_index);
+            NSFW_Image get = converter.get(displayed_index);
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
@@ -1765,7 +1761,7 @@ public class NSWFAPI extends javax.swing.JFrame {
         }
         pressed = null;
         if (new_bb != null && Math.abs(evt.getLocationOnScreen().x - new_bb.x) > 5 && Math.abs(evt.getLocationOnScreen().y - new_bb.y) > 5 && !converter.isEmpty()) {
-            NSWF_Image get = converter.get(displayed_index);
+            NSFW_Image get = converter.get(displayed_index);
             List<NSFW_BoundingBox> results = get.getResults();
             BufferedImage org = get.getBufferedImage();
             //BufferedImage org_rsize = rsize(org, originialimagelabel);
@@ -1815,7 +1811,7 @@ public class NSWFAPI extends javax.swing.JFrame {
 
     private void originialimagelabelMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_originialimagelabelMouseWheelMoved
         if (!converter.isEmpty()) {
-            NSWF_Image get = converter.get(displayed_index);
+            NSFW_Image get = converter.get(displayed_index);
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
@@ -1852,7 +1848,7 @@ public class NSWFAPI extends javax.swing.JFrame {
     }//GEN-LAST:event_originialimagelabelMouseWheelMoved
 
     private void deleteMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteMenuItemActionPerformed
-        NSWF_Image get = converter.get(displayed_index);
+        NSFW_Image get = converter.get(displayed_index);
         boolean remove = get.getResults().remove(pop_selection);
         display(displayed_index);
         if (editmode) {
@@ -2077,7 +2073,7 @@ public class NSWFAPI extends javax.swing.JFrame {
             try {
                 desktop.browse(new URI("https://www.patreon.com/cti"));
             } catch (IOException | URISyntaxException ex) {
-                Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         }
@@ -2089,7 +2085,7 @@ public class NSWFAPI extends javax.swing.JFrame {
             try {
                 desktop.browse(new URI("https://pury.fi/"));
             } catch (IOException | URISyntaxException ex) {
-                Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         }
@@ -2118,9 +2114,9 @@ public class NSWFAPI extends javax.swing.JFrame {
                 for (int i = 0; i < files.length; i++) {
                     File file = new File("output/source/" + files[i].getName().replace(".txt", ".png"));
                     if (file.exists()) {
-                        NSWF_Image nswf_Image = new NSWF_Image(file, 1.0, null);
-                        nswf_Image.setEditedsourcefileimage(file);
-                        nswf_Image.setEditedsourcefiletxt(files[i]);
+                        NSFW_Image NSFW_Image = new NSFW_Image(file, 1.0, null);
+                        NSFW_Image.setEditedsourcefileimage(file);
+                        NSFW_Image.setEditedsourcefiletxt(files[i]);
                         String[] readFile = readFile(files[i].getPath());
                         for (int j = 0; j < readFile.length; j++) {
                             if (readFile[j] != null) {
@@ -2140,20 +2136,20 @@ public class NSWFAPI extends javax.swing.JFrame {
                                 double y_p = Double.parseDouble(splited[2]);
                                 double w_p = Double.parseDouble(splited[3]);
                                 double h_p = Double.parseDouble(splited[4]);
-                                int w = (int) (w_p * nswf_Image.getBufferedImage().getWidth());
-                                int h = (int) (h_p * nswf_Image.getBufferedImage().getHeight());
-                                int x = (int) (x_p * nswf_Image.getBufferedImage().getWidth() - w / 2);
-                                int y = (int) (y_p * nswf_Image.getBufferedImage().getHeight() - h / 2);
+                                int w = (int) (w_p * NSFW_Image.getBufferedImage().getWidth());
+                                int h = (int) (h_p * NSFW_Image.getBufferedImage().getHeight());
+                                int x = (int) (x_p * NSFW_Image.getBufferedImage().getWidth() - w / 2);
+                                int y = (int) (y_p * NSFW_Image.getBufferedImage().getHeight() - h / 2);
                                 int[] boxes = new int[4];
                                 boxes[0] = x;
                                 boxes[1] = y;
                                 boxes[2] = w + x;
                                 boxes[3] = h + y;
                                 NSFW_BoundingBox box = new NSFW_BoundingBox(name, 1.0, boxes);
-                                nswf_Image.getResults().add(box);
+                                NSFW_Image.getResults().add(box);
                             }
                         }
-                        converter.add(nswf_Image);
+                        converter.add(NSFW_Image);
                         if (converter.size() == 1) {
                             display(converter.size() - 1);
                             saveButton.setText("Save images");
@@ -2190,7 +2186,7 @@ public class NSWFAPI extends javax.swing.JFrame {
                 BufferedImage read = ImageIO.read(file);
                 pressed.setSticker(read);
             } catch (IOException ex) {
-                Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
             }
 
             if (editmode) {
@@ -2241,7 +2237,7 @@ public class NSWFAPI extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                final NSWFAPI nswfapi = new NSWFAPI();
+                final NSFWAPI NSFWAPI = new NSFWAPI();
                 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                     public void run() {
                         if (process != null) {
@@ -2271,18 +2267,18 @@ public class NSWFAPI extends javax.swing.JFrame {
                                 boolean started = false;
                                 while ((line = br.readLine()) != null) {
                                     if (line.contains("Serving Flask app")) {
-                                        nswfapi.setAIstate(1);
+                                        NSFWAPI.setAIstate(1);
                                         started = true;
                                         break;
                                     }
                                 }
 
                                 if (started) {
-                                    nswfapi.puryRadioButton.setSelected(false);
-                                    nswfapi.localRadioButton.setSelected(true);
+                                    NSFWAPI.puryRadioButton.setSelected(false);
+                                    NSFWAPI.localRadioButton.setSelected(true);
                                 } else {
-                                    nswfapi.puryRadioButton.setSelected(true);
-                                    nswfapi.localRadioButton.setSelected(false);
+                                    NSFWAPI.puryRadioButton.setSelected(true);
+                                    NSFWAPI.localRadioButton.setSelected(false);
                                 }
                             }
                             process.waitFor();
@@ -2294,16 +2290,16 @@ public class NSWFAPI extends javax.swing.JFrame {
                                 ex.printStackTrace();
                             }
                         } catch (IOException ex) {
-                            Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
                         } catch (InterruptedException ex) {
-                            Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
                         }
 
                     }
                 });
                 t.start();
 
-                nswfapi.setVisible(true);
+                NSFWAPI.setVisible(true);
                 if (args.length > 0) {
                     String s = args[0];
                 }
@@ -2353,9 +2349,9 @@ public class NSWFAPI extends javax.swing.JFrame {
                     process.waitFor();
                     System.out.println("Waiting ...");
                 } catch (IOException ex) {
-                    Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (InterruptedException ex) {
-                    Logger.getLogger(NSWFAPI.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(NSFWAPI.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
             }
