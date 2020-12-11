@@ -33,9 +33,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JLabel;
-import static puryfi.NSWFAPI.output_folder;
-import static puryfi.NSWFAPI.rsize;
+
 import org.json.JSONObject;
+
+import static puryfi.NSWFAPI.*;
 
 /**
  *
@@ -170,30 +171,35 @@ public class NSWF_Image {
     public BufferedImage getCensoredImage(){
         BufferedImage paintedImage = getBufferedImageCopy();
         Graphics g = paintedImage.getGraphics();
-        List<Rectangle> blurboxes = new ArrayList<>();
-        for (int i = 0; i < results.size(); i++) {
-            Rectangle bounding_box = results.get(i).getBounding_box();
-            if(results.get(i).getSticker() != null){
+        if(NSWFAPI.del_buf != null){
+            Rectangle highlight = del_buf.bounding_box;
+            paintedImage = paintedImage.getSubimage(highlight.x, highlight.y, highlight.width, highlight.height);
+        } else {
+            List<Rectangle> blurboxes = new ArrayList<>();
+            for (int i = 0; i < results.size(); i++) {
+                Rectangle bounding_box = results.get(i).getBounding_box();
+                if (results.get(i).getSticker() != null) {
                     paintSticker(g, results.get(i).getSticker(), bounding_box);
-            }else if (NSWFAPI.pixelButton.isSelected()) {
-                if(results.get(i).isCensored()){
-                    pixelate(paintedImage, bounding_box);
-                }
-            } else if(NSWFAPI.barButton.isSelected()) {
-                if (results.get(i).isCensored()) {
-                    g.setColor(Color.BLACK);
-                    g.fillRect(bounding_box.x, bounding_box.y, bounding_box.width, bounding_box.height);
-                }
-            }else{
-                if (results.get(i).isCensored()) {
-                    blurboxes.add(bounding_box);
+                } else if (NSWFAPI.pixelButton.isSelected()) {
+                    if (results.get(i).isCensored()) {
+                        pixelate(paintedImage, bounding_box);
+                    }
+                } else if (NSWFAPI.barButton.isSelected()) {
+                    if (results.get(i).isCensored()) {
+                        g.setColor(Color.BLACK);
+                        g.fillRect(bounding_box.x, bounding_box.y, bounding_box.width, bounding_box.height);
+                    }
+                } else {
+                    if (results.get(i).isCensored()) {
+                        blurboxes.add(bounding_box);
+                    }
                 }
             }
-        }
-        if(NSWFAPI.blurButton.isSelected()){
-            blurbuff = copyImage(paintedImage);
-            fastblur(blurbuff, Math.min(500,(int) NSWFAPI.jSpinner1.getValue()));
-            blur(paintedImage, blurboxes);
+            if (NSWFAPI.blurButton.isSelected()) {
+                blurbuff = copyImage(paintedImage);
+                fastblur(blurbuff, Math.min(500, (int) NSWFAPI.jSpinner1.getValue()));
+                blur(paintedImage, blurboxes);
+            }
         }
         g.dispose();
         return paintedImage;
@@ -398,7 +404,6 @@ public class NSWF_Image {
          }
         }
     }
-
     public void pixelate(BufferedImage inputImage, Rectangle boundingbox) {
 
         int PIX_SIZE = (int) NSWFAPI.jSpinner1.getValue();

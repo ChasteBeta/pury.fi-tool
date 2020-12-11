@@ -41,10 +41,10 @@ public class NSFW_BoundingBox {
         this.name = normalizeName(name);
         this.type = toType(name);
         this.confidence = confidence;
-        bounding_box.y = box[0];
-        bounding_box.x = box[1];
-        bounding_box.height = box[2]-box[0];
-        bounding_box.width = box[3]-box[1];
+        bounding_box.x = box[0];
+        bounding_box.y = box[1];
+        bounding_box.width = box[2]-box[0];
+        bounding_box.height = box[3]-box[1];
     }
     
     
