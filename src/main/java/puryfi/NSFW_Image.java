@@ -257,8 +257,8 @@ public class NSFW_Image {
     public BufferedImage getResizedPaintedImage(JLabel viewport) {
         BufferedImage org = getBufferedImage();
         BufferedImage org_r = NSFWAPI.rsize(org, viewport);
-        double scalex = (double) viewport.getWidth() / org.getWidth();
-        double scaley = (double) viewport.getHeight() / org.getHeight();
+        double scalex = ((double) viewport.getWidth()) / org.getWidth();
+        double scaley = ((double) viewport.getHeight()) / org.getHeight();
         double scale = Math.min(scalex, scaley);
         Graphics2D g = (Graphics2D) org_r.getGraphics();
         float thickness = 2;

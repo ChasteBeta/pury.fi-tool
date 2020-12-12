@@ -5,21 +5,8 @@
  */
 package puryfi;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Desktop;
-import java.awt.FileDialog;
-import java.awt.Frame;
-import java.awt.Graphics2D;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,12 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.fluent.Request;
@@ -72,6 +54,7 @@ public class NSFWAPI extends javax.swing.JFrame {
 
     public boolean editmode = false;
 
+    long time;
     /**
      * Creates new form NewJFrame
      */
@@ -84,7 +67,17 @@ public class NSFWAPI extends javax.swing.JFrame {
             }
         };
         initComponents();
+        time = System.currentTimeMillis();
+        this.setMinimumSize(new Dimension(905, 700));
+        this.addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent componentEvent) {
+                if(System.currentTimeMillis() - time > 100){
+                    time = System.currentTimeMillis();
+                    display(displayed_index);
+                }
 
+            }
+        });
 
         editButton.setEnabled(output_folder.isDirectory() && output_folder.list().length > 0);
         setAIstate(0);
@@ -263,6 +256,9 @@ public class NSFWAPI extends javax.swing.JFrame {
     int mouse_m_y = 0;
 
     public void display(int i) {
+        this.revalidate();
+        this.repaint();
+        System.out.println(jPanel2.getBounds().toString());
         if (!converter.isEmpty()) {
             displayed_index = i;
             jLabel9.setText("Preview: " + (displayed_index + 1) + " / " + converter.size());
@@ -270,47 +266,38 @@ public class NSFWAPI extends javax.swing.JFrame {
             NSFW_Image get = converter.get(i);
             scoreLabel.setText("<html>NSFW Score: <b>" + get.getNsfw_score());
             BufferedImage cens = get.getCensoredImage();
-            BufferedImage org_rsize = get.getResizedPaintedImage(originialimagelabel);
+            BufferedImage org_rsize = get.getResizedPaintedImage(originalImageLabel);
             if (new_bb != null) {
-                int image_offset_x = 0;
-                int image_offset_y = 0;
-                Rectangle viewportsize = originialimagelabel.getBounds();
-                BufferedImage org = get.getBufferedImage();
-                double scalex = (double) originialimagelabel.getWidth() / org.getWidth();
-                double scaley = (double) originialimagelabel.getHeight() / org.getHeight();
-                double scale = Math.min(scalex, scaley);
-                int r_h = (int) (org.getHeight() * scale);
-                int r_w = (int) (org.getWidth() * scale);
-                image_offset_y = (viewportsize.height - r_h) / 2;
-                image_offset_x = (viewportsize.width - r_w) / 2;
+                ResizedDimensions resizedDimensions = ResizedDimensions.calculate(originalImageLabel, get.getBufferedImage());
+
                 int deltaX = (mouse_m_x - bb_x);
                 int deltaY = (mouse_m_y - bb_y);
                 Graphics2D g = (Graphics2D) org_rsize.getGraphics();
                 g.setColor(Color.pink);
                 if (deltaX > 0 && deltaY > 0) {
-                    g.fillRect(bb_x - image_offset_x, bb_y - image_offset_y, deltaX, deltaY);
+                    g.fillRect(bb_x - resizedDimensions.getOffsetX(), bb_y - resizedDimensions.getOffsetY(), deltaX, deltaY);
                 } else if (deltaX < 0 && deltaY < 0) {
-                    g.fillRect(bb_x - image_offset_x + deltaX, bb_y - image_offset_y + deltaY, -deltaX, -deltaY);
+                    g.fillRect(bb_x - resizedDimensions.getOffsetX() + deltaX, bb_y - resizedDimensions.getOffsetY() + deltaY, -deltaX, -deltaY);
                 } else if (deltaX < 0 && deltaY > 0) {
-                    g.fillRect(bb_x - image_offset_x + deltaX, bb_y - image_offset_y, -deltaX, deltaY);
+                    g.fillRect(bb_x - resizedDimensions.getOffsetX() + deltaX, bb_y - resizedDimensions.getOffsetY(), -deltaX, deltaY);
                 } else if (deltaX > 0 && deltaY < 0) {
-                    g.fillRect(bb_x - image_offset_x, bb_y - image_offset_y + deltaY, deltaX, -deltaY);
+                    g.fillRect(bb_x - resizedDimensions.getOffsetX(), bb_y - resizedDimensions.getOffsetY() + deltaY, deltaX, -deltaY);
                 }
                 g.dispose();
             }
             BufferedImage cens_rsize = rsize(cens, censoredlimagelabel);
-            originialimagelabel.setIcon(new ImageIcon(org_rsize));
+            originalImageLabel.setIcon(new ImageIcon(org_rsize));
             censoredlimagelabel.setIcon(new ImageIcon(cens_rsize));
             ignoreCheckBox.setSelected(converter.get(displayed_index).isIgnore());
         }
     }
 
 
-    public static BufferedImage rsize(BufferedImage image, JLabel label) {
-        double scalex = (double) label.getWidth() / image.getWidth();
-        double scaley = (double) label.getHeight() / image.getHeight();
+    public static BufferedImage rsize(BufferedImage org, JLabel label) {
+        double scalex = ((double) label.getWidth()) / org.getWidth();
+        double scaley = ((double) label.getHeight()) / org.getHeight();
         double scale = Math.min(scalex, scaley);
-        return Scalr.resize(image, Scalr.Method.BALANCED, Scalr.Mode.AUTOMATIC, (int) (Math.max(1, image.getWidth() * scale)), (int) (Math.max(1, image.getHeight() * scale)), Scalr.OP_ANTIALIAS);
+        return Scalr.resize(org, Scalr.Method.BALANCED, Scalr.Mode.AUTOMATIC, (int) (Math.max(1, org.getWidth() * scale)), (int) (Math.max(1, org.getHeight() * scale)), Scalr.OP_ANTIALIAS);
     }
 
 
@@ -396,7 +383,7 @@ public class NSFWAPI extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
-        originialimagelabel = new javax.swing.JLabel();
+        originalImageLabel = new javax.swing.JLabel();
         censoredlimagelabel = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
         jButton4 = new javax.swing.JButton();
@@ -673,10 +660,9 @@ public class NSFWAPI extends javax.swing.JFrame {
         jLabel3.setText("Pury.fi Censor Tool");
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        jPanel2.setLayout(new java.awt.GridLayout(1, 0));
-
-        originialimagelabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        originialimagelabel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+        jPanel2.setLayout(new GridLayout(1,2));
+        originalImageLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        originalImageLabel.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
             public void mouseDragged(java.awt.event.MouseEvent evt) {
                 originialimagelabelMouseDragged(evt);
             }
@@ -685,12 +671,12 @@ public class NSFWAPI extends javax.swing.JFrame {
                 originialimagelabelMouseMoved(evt);
             }
         });
-        originialimagelabel.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+        originalImageLabel.addMouseWheelListener(new java.awt.event.MouseWheelListener() {
             public void mouseWheelMoved(java.awt.event.MouseWheelEvent evt) {
                 originialimagelabelMouseWheelMoved(evt);
             }
         });
-        originialimagelabel.addMouseListener(new java.awt.event.MouseAdapter() {
+        originalImageLabel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 originialimagelabelMouseClicked(evt);
             }
@@ -703,8 +689,8 @@ public class NSFWAPI extends javax.swing.JFrame {
                 originialimagelabelMouseReleased(evt);
             }
         });
-        jPanel2.add(originialimagelabel);
 
+        jPanel2.add(originalImageLabel);
         censoredlimagelabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jPanel2.add(censoredlimagelabel);
 
@@ -1021,7 +1007,7 @@ public class NSFWAPI extends javax.swing.JFrame {
                                                 .addComponent(statusLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(jLabel12))
-                                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jPanel2, 378, 378, Short.MAX_VALUE)
                                         .addGroup(jPanel1Layout.createSequentialGroup()
                                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                         .addGroup(jPanel1Layout.createSequentialGroup()
@@ -1199,15 +1185,14 @@ public class NSFWAPI extends javax.swing.JFrame {
                                         .addGroup(jPanel1Layout.createSequentialGroup()
                                                 .addGap(4, 4, 4)
                                                 .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 378, Short.MAX_VALUE)
+                                .addGap(0,0,0)
+                                .addComponent(jPanel2, 378, 378, Short.MAX_VALUE)
                                 .addGap(0, 0, 0)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                         .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addComponent(statusLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                         .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -1421,7 +1406,7 @@ public class NSFWAPI extends javax.swing.JFrame {
     private void originialimagelabelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_originialimagelabelMouseClicked
         if (pressed == null) {
             if (evt.isPopupTrigger()) {
-                if (doPopup(originialimagelabel, evt)) {
+                if (doPopup(originalImageLabel, evt)) {
                     return;
                 }
             }
@@ -1430,27 +1415,19 @@ public class NSFWAPI extends javax.swing.JFrame {
                 List<NSFW_BoundingBox> results = get.getResults();
                 int x = evt.getX();
                 int y = evt.getY();
-                int image_offset_x = 0;
-                int image_offset_y = 0;
-                Rectangle viewportsize = originialimagelabel.getBounds();
-                BufferedImage org = get.getBufferedImage();
-                double scalex = (double) originialimagelabel.getWidth() / org.getWidth();
-                double scaley = (double) originialimagelabel.getHeight() / org.getHeight();
-                double scale = Math.min(scalex, scaley);
-                int r_h = (int) (org.getHeight() * scale);
-                int r_w = (int) (org.getWidth() * scale);
 
-                image_offset_y = (viewportsize.height - r_h) / 2;
-                image_offset_x = (viewportsize.width - r_w) / 2;
+                ResizedDimensions resizedDimensions = ResizedDimensions.calculate(originalImageLabel, get.getBufferedImage());
+
+
 
 
                 for (int i = 0; i < results.size(); i++) {
                     NSFW_BoundingBox get1 = results.get(i);
                     Rectangle bounding_box = get1.bounding_box;
-                    int bx = (int) (scale * bounding_box.x) + image_offset_x;
-                    int by = (int) (scale * bounding_box.y) + image_offset_y;
-                    int bw = (int) (scale * (bounding_box.width + bounding_box.x)) + image_offset_x;
-                    int bh = (int) (scale * (bounding_box.height + bounding_box.y)) + image_offset_y;
+                    int bx = (int) (resizedDimensions.getScale() * bounding_box.x) + resizedDimensions.getOffsetX();
+                    int by = (int) (resizedDimensions.getScale() * bounding_box.y) + resizedDimensions.getOffsetY();
+                    int bw = (int) (resizedDimensions.getScale() * (bounding_box.width + bounding_box.x)) + resizedDimensions.getOffsetX();
+                    int bh = (int) (resizedDimensions.getScale() * (bounding_box.height + bounding_box.y)) + resizedDimensions.getOffsetY();
 
                     if (bx <= x && bw >= x &&
                             by <= y && bh >= y) {
@@ -1526,34 +1503,24 @@ public class NSFWAPI extends javax.swing.JFrame {
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
-            int image_offset_x = 0;
-            int image_offset_y = 0;
-            Rectangle viewportsize = originialimagelabel.getBounds();
-            BufferedImage org = get.getBufferedImage();
-            double scalex = (double) originialimagelabel.getWidth() / org.getWidth();
-            double scaley = (double) originialimagelabel.getHeight() / org.getHeight();
-            double scale = Math.min(scalex, scaley);
-            int r_h = (int) (org.getHeight() * scale);
-            int r_w = (int) (org.getWidth() * scale);
-            image_offset_y = (viewportsize.height - r_h) / 2;
-            image_offset_x = (viewportsize.width - r_w) / 2;
+            ResizedDimensions resizedDimensions = ResizedDimensions.calculate(originalImageLabel, get.getBufferedImage());
             boolean hit = false;
             for (int i = 0; i < results.size(); i++) {
                 NSFW_BoundingBox get1 = results.get(i);
                 Rectangle bounding_box = get1.bounding_box;
-                int bx = (int) (scale * bounding_box.x) + image_offset_x;
-                int by = (int) (scale * bounding_box.y) + image_offset_y;
-                int bw = (int) (scale * (bounding_box.width + bounding_box.x)) + image_offset_x;
-                int bh = (int) (scale * (bounding_box.height + bounding_box.y)) + image_offset_y;
+                int bx = (int) (resizedDimensions.getScale() * bounding_box.x) + resizedDimensions.getOffsetX();
+                int by = (int) (resizedDimensions.getScale() * bounding_box.y) + resizedDimensions.getOffsetY();
+                int bw = (int) (resizedDimensions.getScale() * (bounding_box.width + bounding_box.x)) + resizedDimensions.getOffsetX();
+                int bh = (int) (resizedDimensions.getScale() * (bounding_box.height + bounding_box.y)) + resizedDimensions.getOffsetY();
                 if (bx <= x && bw >= x &&
                         by <= y && bh >= y) {
                     hit = true;
-                    originialimagelabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+                    originalImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
                     break;
                 }
             }
             if (!hit) {
-                originialimagelabel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                originalImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             }
 
         }
@@ -1574,24 +1541,14 @@ public class NSFWAPI extends javax.swing.JFrame {
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
-            int image_offset_x = 0;
-            int image_offset_y = 0;
-            Rectangle viewportsize = originialimagelabel.getBounds();
-            BufferedImage org = get.getBufferedImage();
-            double scalex = (double) originialimagelabel.getWidth() / org.getWidth();
-            double scaley = (double) originialimagelabel.getHeight() / org.getHeight();
-            double scale = Math.min(scalex, scaley);
-            int r_h = (int) (org.getHeight() * scale);
-            int r_w = (int) (org.getWidth() * scale);
-            image_offset_y = (viewportsize.height - r_h) / 2;
-            image_offset_x = (viewportsize.width - r_w) / 2;
+            ResizedDimensions resizedDimensions = ResizedDimensions.calculate(originalImageLabel, get.getBufferedImage());
             for (int i = 0; i < results.size(); i++) {
                 NSFW_BoundingBox get1 = results.get(i);
                 Rectangle bounding_box = get1.bounding_box;
-                int bx = (int) (scale * bounding_box.x) + image_offset_x;
-                int by = (int) (scale * bounding_box.y) + image_offset_y;
-                int bw = (int) (scale * (bounding_box.width + bounding_box.x)) + image_offset_x;
-                int bh = (int) (scale * (bounding_box.height + bounding_box.y)) + image_offset_y;
+                int bx = (int) (resizedDimensions.getScale() * bounding_box.x) + resizedDimensions.getOffsetX();
+                int by = (int) (resizedDimensions.getScale() * bounding_box.y) + resizedDimensions.getOffsetY();
+                int bw = (int) (resizedDimensions.getScale() * (bounding_box.width + bounding_box.x)) + resizedDimensions.getOffsetX();
+                int bh = (int) (resizedDimensions.getScale() * (bounding_box.height + bounding_box.y)) + resizedDimensions.getOffsetY();
                 if (bx <= x && bw >= x &&
                         by <= y && bh >= y) {
                     jPopupMenu1.show(component, evt.getX(), evt.getY());
@@ -1673,8 +1630,8 @@ public class NSFWAPI extends javax.swing.JFrame {
         if (pressed != null) {
             NSFW_Image get = converter.get(displayed_index);
             BufferedImage bufferedImage = get.getBufferedImage();
-            double scalex = (double) originialimagelabel.getWidth() / bufferedImage.getWidth();
-            double scaley = (double) originialimagelabel.getHeight() / bufferedImage.getHeight();
+            double scalex = (double) originalImageLabel.getWidth() / bufferedImage.getWidth();
+            double scaley = (double) originalImageLabel.getHeight() / bufferedImage.getHeight();
             double scale = 1 / Math.min(scalex, scaley);
 
             //int new_x = (int) (scale*Math.max(0,Math.min(bufferedImage.getWidth(),(int) (p_x - pressed_event.getX() + evt.getXOnScreen()))));
@@ -1707,30 +1664,20 @@ public class NSFWAPI extends javax.swing.JFrame {
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
-            int image_offset_x = 0;
-            int image_offset_y = 0;
-            Rectangle viewportsize = originialimagelabel.getBounds();
-            BufferedImage org = get.getBufferedImage();
-            double scalex = (double) originialimagelabel.getWidth() / org.getWidth();
-            double scaley = (double) originialimagelabel.getHeight() / org.getHeight();
-            double scale = Math.min(scalex, scaley);
-            int r_h = (int) (org.getHeight() * scale);
-            int r_w = (int) (org.getWidth() * scale);
-            image_offset_y = (viewportsize.height - r_h) / 2;
-            image_offset_x = (viewportsize.width - r_w) / 2;
+            ResizedDimensions resizedDimensions = ResizedDimensions.calculate(originalImageLabel, get.getBufferedImage());
             for (int i = 0; i < results.size(); i++) {
                 NSFW_BoundingBox get1 = results.get(i);
                 Rectangle bounding_box = get1.bounding_box;
-                int bx = (int) (scale * bounding_box.x) + image_offset_x;
-                int by = (int) (scale * bounding_box.y) + image_offset_y;
-                int bw = (int) (scale * (bounding_box.width + bounding_box.x)) + image_offset_x;
-                int bh = (int) (scale * (bounding_box.height + bounding_box.y)) + image_offset_y;
+                int bx = (int) (resizedDimensions.getScale() * bounding_box.x) + resizedDimensions.getOffsetX();
+                int by = (int) (resizedDimensions.getScale() * bounding_box.y) + resizedDimensions.getOffsetY();
+                int bw = (int) (resizedDimensions.getScale() * (bounding_box.width + bounding_box.x)) + resizedDimensions.getOffsetX();
+                int bh = (int) (resizedDimensions.getScale() * (bounding_box.height + bounding_box.y)) + resizedDimensions.getOffsetY();
                 if (bx <= x && bw >= x &&
                         by <= y && bh >= y) {
-                    originialimagelabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+                    originalImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
                     pressed = get1;
                     if (evt.isPopupTrigger()) {
-                        if (doPopup(originialimagelabel, evt)) {
+                        if (doPopup(originalImageLabel, evt)) {
                             return;
                         }
                     }
@@ -1757,25 +1704,21 @@ public class NSFWAPI extends javax.swing.JFrame {
         if (jPopupMenu1.isShowing()) {
             return;
         }
-        if (evt.isPopupTrigger()) {
-            System.out.println("Trigger");
-            if (doPopup(originialimagelabel, evt)) {
+        if (evt.isPopupTrigger() && doPopup(originalImageLabel, evt)) {
                 return;
-            }
         }
         pressed = null;
         if (new_bb != null && Math.abs(evt.getLocationOnScreen().x - new_bb.x) > 5 && Math.abs(evt.getLocationOnScreen().y - new_bb.y) > 5 && !converter.isEmpty()) {
             NSFW_Image get = converter.get(displayed_index);
             List<NSFW_BoundingBox> results = get.getResults();
             BufferedImage org = get.getBufferedImage();
-            //BufferedImage org_rsize = rsize(org, originialimagelabel);
-            double scalex = (double) originialimagelabel.getWidth() / org.getWidth();
-            double scaley = (double) originialimagelabel.getHeight() / org.getHeight();
+            double scalex = ((double) originalImageLabel.getWidth()) / org.getWidth();
+            double scaley = ((double) originalImageLabel.getHeight()) / org.getHeight();
             double scale = Math.min(scalex, scaley);
             int r_h = (int) (org.getHeight() * scale);
             int r_w = (int) (org.getWidth() * scale);
-            int image_offset_y = (int) (1 / scale * (originialimagelabel.getHeight() - r_h) / 2);
-            int image_offset_x = (int) (1 / scale * (originialimagelabel.getWidth() - r_w) / 2);
+            int image_offset_y = (int) (1 / scale * (originalImageLabel.getHeight() - r_h) / 2);
+            int image_offset_x = (int) (1 / scale * (originalImageLabel.getWidth() - r_w) / 2);
             int deltaX = Math.min(org.getWidth(), (int) (1 / scale * (mouse_m_x - bb_x)));
             int deltaY = Math.min(org.getHeight(), (int) (1 / scale * (mouse_m_y - bb_y)));
             int x = Math.min(org.getWidth(), Math.max(0, (int) (1 / scale * bb_x) - image_offset_x));
@@ -1810,7 +1753,7 @@ public class NSFWAPI extends javax.swing.JFrame {
         }
         new_bb = null;
 
-        originialimagelabel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        originalImageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }//GEN-LAST:event_originialimagelabelMouseReleased
 
     private void originialimagelabelMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_originialimagelabelMouseWheelMoved
@@ -1819,24 +1762,14 @@ public class NSFWAPI extends javax.swing.JFrame {
             List<NSFW_BoundingBox> results = get.getResults();
             int x = evt.getX();
             int y = evt.getY();
-            int image_offset_x = 0;
-            int image_offset_y = 0;
-            Rectangle viewportsize = originialimagelabel.getBounds();
-            BufferedImage org = get.getBufferedImage();
-            double scalex = (double) originialimagelabel.getWidth() / org.getWidth();
-            double scaley = (double) originialimagelabel.getHeight() / org.getHeight();
-            double scale = Math.min(scalex, scaley);
-            int r_h = (int) (org.getHeight() * scale);
-            int r_w = (int) (org.getWidth() * scale);
-            image_offset_y = (viewportsize.height - r_h) / 2;
-            image_offset_x = (viewportsize.width - r_w) / 2;
+            ResizedDimensions resizedDimensions = ResizedDimensions.calculate(originalImageLabel, get.getBufferedImage());
             for (int i = 0; i < results.size(); i++) {
                 NSFW_BoundingBox get1 = results.get(i);
                 Rectangle bounding_box = get1.bounding_box;
-                int bx = (int) (scale * bounding_box.x) + image_offset_x;
-                int by = (int) (scale * bounding_box.y) + image_offset_y;
-                int bw = (int) (scale * (bounding_box.width + bounding_box.x)) + image_offset_x;
-                int bh = (int) (scale * (bounding_box.height + bounding_box.y)) + image_offset_y;
+                int bx = (int) (resizedDimensions.getScale() * bounding_box.x) + resizedDimensions.getOffsetX();
+                int by = (int) (resizedDimensions.getScale() * bounding_box.y) + resizedDimensions.getOffsetY();
+                int bw = (int) (resizedDimensions.getScale() * (bounding_box.width + bounding_box.x)) + resizedDimensions.getOffsetX();
+                int bh = (int) (resizedDimensions.getScale() * (bounding_box.height + bounding_box.y)) + resizedDimensions.getOffsetY();
                 if (bx <= x && bw >= x &&
                         by <= y && bh >= y) {
                     int nw = (int) (evt.getWheelRotation() > 0 ? get1.bounding_box.width * 0.9 : get1.bounding_box.width * 1.1);
@@ -2446,7 +2379,7 @@ public class NSFWAPI extends javax.swing.JFrame {
     private javax.swing.JRadioButtonMenuItem mgen_e_RadioButtonMenuItem;
     public static javax.swing.JCheckBox mgen_e_button;
     private javax.swing.JRadioButton noaiRadioButton;
-    private javax.swing.JLabel originialimagelabel;
+    private javax.swing.JLabel originalImageLabel;
     public static javax.swing.JRadioButton pixelButton;
     private javax.swing.JRadioButton puryRadioButton;
     private javax.swing.JButton saveButton;
