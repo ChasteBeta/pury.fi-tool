@@ -1729,11 +1729,13 @@ public class NSFWAPI extends javax.swing.JFrame {
                         by <= y && bh >= y) {
                     originialimagelabel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
                     pressed = get1;
-                    del_buf = get1;
                     if (evt.isPopupTrigger()) {
                         if (doPopup(originialimagelabel, evt)) {
                             return;
                         }
+                    }
+                    if (evt.getButton() == 1) {
+                        del_buf = get1;
                     }
                     pressed_event = evt.getLocationOnScreen();
                     p_x = get1.getBounding_box().x;
@@ -1744,7 +1746,7 @@ public class NSFWAPI extends javax.swing.JFrame {
         }
         if (del_buf != null) {
             del_buf = null;
-        } else {
+        } else if(evt.getButton() == 1){
             new_bb = evt.getLocationOnScreen();
             bb_x = evt.getX();
             bb_y = evt.getY();
@@ -1756,6 +1758,7 @@ public class NSFWAPI extends javax.swing.JFrame {
             return;
         }
         if (evt.isPopupTrigger()) {
+            System.out.println("Trigger");
             if (doPopup(originialimagelabel, evt)) {
                 return;
             }

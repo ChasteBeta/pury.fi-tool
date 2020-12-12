@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.example</groupId>
     <artifactId>PurifyFork</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <name>spring-boot</name>
     <properties>
         <java.version>1.13</java.version>
